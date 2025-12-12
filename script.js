@@ -6,15 +6,47 @@
   const img = new Image();
   img.src = "obrazek.png";
 
-  // ---- Antihighlight a anti-select (Android/Chrome, iOS) ----
+  // ---- Globální vypnutí tap highlight (pro jistotu) ----
+  (function injectNoTapCSS(){
+    const css = `
+      html, body, canvas, #game, .hitbox {
+        -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        outline: none !important;
+      }
+      .hitbox {
+        position: absolute;
+        background: transparent;
+        touch-action: manipulation; /* povolí klepnutí, omezí double-tap zoom */
+        -webkit-touch-callout: none;
+      }
+    `;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+  })();
+
+  // ---- Vytvoření průhledného hitboxu nad canvasem ----
+  const hitbox = document.createElement('div');
+  hitbox.className = 'hitbox';
+  // Canvas musí mít známé umístění (parent relativní)
+  const parent = c.parentElement || document.body;
+  const parentStyle = getComputedStyle(parent);
+  if (parentStyle.position === 'static') parent.style.position = 'relative';
+
+  // Antihighlight a antiselect i na canvasu (kreslení bez interakce)
   c.setAttribute('tabindex', '-1');
   c.style.outline = 'none';
   c.style.userSelect = 'none';
   c.style.webkitUserSelect = 'none';
-  c.style.webkitTapHighlightColor = 'rgba(0,0,0,0)'; // spolehlivější než 'transparent' na Android/Chrome
-  c.style.touchAction = 'manipulation';              // omezení double‑tap zoomu, zachování tapu
-  c.addEventListener('contextmenu', e => e.preventDefault()); // bez kontextového menu
+  c.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+  c.style.touchAction = 'manipulation';
+  c.addEventListener('contextmenu', e => e.preventDefault());
 
+  parent.appendChild(hitbox);
+
+  // Pomocné proměnné hry
   const colors = [
     [0,255,255],[0,255,0],[255,255,0],[255,127,0],
     [255,0,0],[255,0,255],[127,0,255],[0,0,255]
@@ -115,7 +147,7 @@
     drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
 
     if(first){
-      drawText("Stiskni mezerník nebo klepni/klikni na obrázek",W/2,10,"#fff",18,"center");
+      drawText("Stiskni mezerník nebo klikni na obrázek",W/2,10,"#fff",18,"center");
     } else if(cut !== null){
       drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
     }
@@ -155,25 +187,15 @@
   // Klávesnice: Space
   window.addEventListener("keydown", e=>{
     if(e.code==="Space"){
-      e.preventDefault(); // potlačí scroll stránkou
+      e.preventDefault();
       triggerSlice();
     }
   });
 
-  // --- Ovládání ukazatelem (myš i dotyk) + ochrana proti dvojímu spuštění ---
+  // ---- Přepínač režimu + interakce přes HITBOX (ne canvas) ----
   let lastTouchTS = 0;
 
-  // touchstart: potlačí nativní tap highlight ještě dřív než click/pointer
-  c.addEventListener("touchstart", e => {
-    e.preventDefault(); // nutně {passive:false}, viz níže
-    const r = c.getBoundingClientRect();
-    const t = e.changedTouches[0];
-    const mx = t.clientX - r.left;
-    const my = t.clientY - r.top;
-
-    // označ, že proběhl touch -> pointerdown z touch ignorujeme
-    lastTouchTS = Date.now();
-
+  function handlePointer(mx, my){
     // Přepínač režimu (vlevo nahoře)
     if(mx>=10 && mx<=140 && my>=10 && my<=40){
       saveBest();
@@ -187,47 +209,69 @@
     if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
       triggerSlice();
     }
+  }
+
+  // Touch → přednostně touchstart, potlačit highlight/click
+  hitbox.addEventListener("touchstart", e=>{
+    e.preventDefault(); // {passive:false} defaultně není u addEventListener, ale pro jistotu:
   }, { passive: false });
 
-  // pointerdown: funguje pro myš i dotyk (dotyk ale odfiltrujeme, pokud už řešil touchstart)
-  c.addEventListener("pointerdown", e=>{
-    // pokud je to dotyk a nedávno šel touchstart, ignoruj (zabrání double‑fire)
+  hitbox.addEventListener("touchend", e=>{
+    e.preventDefault();
+    const r = c.getBoundingClientRect();
+    const t = e.changedTouches[0];
+    const mx = t.clientX - r.left;
+    const my = t.clientY - r.top;
+    lastTouchTS = Date.now();
+    handlePointer(mx, my);
+  }, { passive: false });
+
+  // Pointer (myš): click/tap bez modrého highlightu (na hitboxu)
+  hitbox.addEventListener("pointerdown", e=>{
+    // filtr pro dotyk: když před chvílí proběhl touchend, neprovádět znovu
     if(e.pointerType === 'touch' && Date.now() - lastTouchTS < 350){
       e.preventDefault();
       return;
     }
     e.preventDefault();
-
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
-
-    // Přepínač režimu (vlevo nahoře)
-    if(mx>=10 && mx<=140 && my>=10 && my<=40){
-      saveBest();
-      mi = (mi+1) % modes.length;
-      mode = modes[mi];
-      setMode(mode);
-      reset(true);
-      return;
-    }
-
-    // Skryté tlačítko = oblast obrázku
-    if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
-      triggerSlice();
-    }
+    handlePointer(mx, my);
   });
 
-  // Záloha: potlač click (některé prohlížeče jej po touch i tak vystřelí)
-  c.addEventListener("click", e => e.preventDefault(), { capture:true });
+  // Potlačit click (některé prohlížeče jej vystřelí po touchend)
+  hitbox.addEventListener("click", e=> e.preventDefault(), { capture:true });
 
-  // (volitelné) kurzor při najetí na obrázek
-  c.addEventListener("pointermove", e=>{
+  // Volitelně kurzor: pointer jen nad obrázkem
+  hitbox.addEventListener("pointermove", e=>{
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
     const overImage = (mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih);
-    c.style.cursor = overImage ? "pointer" : "default";
+    hitbox.style.cursor = overImage ? "pointer" : "default";
+  });
+
+  // --- Umístění a velikost HITBOXU ---
+  function placeHitbox(){
+    // canvas je v parentu s position:relative; hitbox absolutně překrývá celý canvas
+    const rect = c.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+
+    // Souřadnice relativně k parentu
+    const left = rect.left - parentRect.left + parent.scrollLeft;
+    const top  = rect.top  - parentRect.top  + parent.scrollTop;
+
+    hitbox.style.left = `${left}px`;
+    hitbox.style.top  = `${top}px`;
+    hitbox.style.width = `${rect.width}px`;
+    hitbox.style.height= `${rect.height}px`;
+  }
+
+  // Reflow/resize/scroll – přepočítat hitbox umístění
+  ["resize","scroll"].forEach(ev=>{
+    window.addEventListener(ev, placeHitbox, { passive:true });
+    parent.addEventListener(ev, placeHitbox, { passive:true });
   });
 
   img.onload = ()=>{
@@ -244,11 +288,16 @@
     setMode(mode);
     reset(true);
     requestAnimationFrame(loop);
+
+    // umísti hitbox po načtení
+    placeHitbox();
   };
+
   img.onerror = ()=>{
     x.fillStyle="#1e1e1e";
     x.fillRect(0,0,W,H);
     drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
+    // i tak umístíme hitbox (pro případ interakce s UI)
+    placeHitbox();
   };
 })();
-``
