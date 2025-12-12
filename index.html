@@ -9,21 +9,16 @@
 
   <style>
     :root { --W: 700px; --H: 300px; }
-    html, body {
-      height: 100%; margin: 0;
-      background: #1e1e1e; color: #fff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      touch-action: manipulation;
-      overscroll-behavior: none;
-      -webkit-text-size-adjust: 100%;
-    }
+    html, body { height:100%; margin:0; background:#1e1e1e; color:#fff;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      touch-action: manipulation; overscroll-behavior: none; -webkit-text-size-adjust:100%; }
     .wrap { display:flex; justify-content:center; align-items:flex-start; padding:12px 8px; }
-    #app  { width: var(--W); height: var(--H); transform-origin: top center; }
-    canvas{ display:block; width: var(--W); height: var(--H); }
+    #app  { width:var(--W); height:var(--H); transform-origin: top center; }
+    canvas{ display:block; width:var(--W); height:var(--H); }
   </style>
 
-  <!-- DŮLEŽITÉ: odkaz na skutečný soubor -->
-  script.js</script>
+  <!-- DŮLEŽITÉ: relativní cesta + defer + cache buster -->
+  ./script.js?v=3</script>
 </head>
 <body>
   <div class="wrap">
@@ -32,12 +27,12 @@
     </div>
   </div>
 
-  <!-- Auto-scale + zákaz zoomu (spouštět po načtení script.js) -->
+  <!-- Auto-scale a zákaz zoomu – může zůstat tady (po načtení DOM) -->
   <script>
     function updateScale() {
-      const W = 700, H = 300;
+      const W=700, H=300;
       const scaleW = Math.min(window.innerWidth / W, 1);
-      const scaleH = Math.min(window.innerHeight / (H + 24), 1);
+      const scaleH = Math.min(window.innerHeight / (H+24), 1);
       const scale = Math.min(scaleW, scaleH);
       const app = document.getElementById('app');
       if (app) app.style.transform = `scale(${scale})`;
@@ -46,10 +41,10 @@
     addEventListener('resize', updateScale);
     addEventListener('orientationchange', updateScale);
 
-    // zákaz zoomu
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
-    document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturestart', e=>e.preventDefault());
+    document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false});
+    document.addEventListener('wheel', e=>{ if(e.ctrlKey) e.preventDefault(); }, {passive:false});
   </script>
 </body>
-</
+</html>
+``
