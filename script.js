@@ -33,6 +33,9 @@ let iw=0, ih=0, ix=0, iy=100;
 let SV=0, TOL=0, base=0, spd=0, co=0;
 let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
 
+let zoom = 1;
+let lastDist = null;
+
 function setMode(m){
   const d = diff[m];
   base = d.speed;
@@ -92,18 +95,18 @@ function render(){
   x.fillRect(0,0,c.width,c.height);
 
   if(cut === null){
-    x.drawImage(img, ix, iy, iw, ih);
+    x.drawImage(img, ix, iy, iw*zoom, ih*zoom);
   } else {
     const srcH = img.naturalHeight;
-    const scale = ih / srcH;
+    const scale = (ih*zoom) / srcH;
     const realCut = Math.round(cut / scale);
 
     x.drawImage(
       img,
       0, realCut,
       img.naturalWidth, srcH - realCut,
-      ix, iy + cut,
-      iw, ih - cut
+      ix, iy + cut*zoom,
+      iw*zoom, ih*zoom - cut*zoom
     );
   }
 
@@ -118,7 +121,7 @@ function render(){
   drawText(`Best: ${best[mode]}`,c.width-10,28,"#fff",16,"right");
 
   if(first){
-    drawText("Stiskni mezerník",c.width/2,10,"#fff",18,"center");
+    drawText("Stiskni mezerník nebo tap",c.width/2,10,"#fff",18,"center");
   } else if(cut !== null){
     drawText(hit ? "PERFECT!" : "FAIL!", c.width/2,10, hit?"#0f0":"#f00",20,"center");
   }
@@ -183,21 +186,39 @@ c.addEventListener("mousedown", e=>{
 // Mobilní dotyk
 c.addEventListener("touchstart", e=>{
   e.preventDefault();
-  const touch = e.touches[0];
-  const mx = touch.clientX;
-  const my = touch.clientY;
-
-  if(mx>=10 && mx<=140 && my>=10 && my<=40){
-    saveBest();
-    mi = (mi+1) % modes.length;
-    mode = modes[mi];
-    setMode(mode);
-    reset(true);
-    return;
+  if(e.touches.length === 1){
+    const t = e.touches[0];
+    if(t.clientX>=10 && t.clientX<=140 && t.clientY>=10 && t.clientY<=40){
+      saveBest();
+      mi = (mi+1) % modes.length;
+      mode = modes[mi];
+      setMode(mode);
+      reset(true);
+      return;
+    }
+    triggerCut();
+  } else if(e.touches.length === 2){
+    lastDist = getDistance(e.touches);
   }
-
-  triggerCut();
 });
+
+c.addEventListener("touchmove", e=>{
+  if(e.touches.length === 2 && lastDist){
+    const newDist = getDistance(e.touches);
+    zoom *= newDist / lastDist;
+    lastDist = newDist;
+  }
+});
+
+c.addEventListener("touchend", e=>{
+  if(e.touches.length < 2) lastDist = null;
+});
+
+function getDistance(touches){
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
 
 // Detekce mobilu
 const isMobile = /Mobi|Android/i.test(navigator.userAgent);
@@ -214,8 +235,8 @@ img.onload = ()=>{
   } else {
     c.width = window.innerWidth;
     c.height = window.innerHeight;
-    const maxWidth = c.width * 0.9;   // obrázek zabere max 90% šířky obrazovky
-    const scale = Math.min(1, maxWidth / img.naturalWidth);
+    const maxWidth = c.width * 0.9;
+    const scale = (maxWidth / img.naturalWidth);
     iw = img.naturalWidth * scale;
     ih = img.naturalHeight * scale;
     ix = (c.width - iw)/2;
