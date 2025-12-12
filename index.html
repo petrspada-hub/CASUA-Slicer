@@ -14,7 +14,7 @@
     h1{margin:0 0 8px 0;font-size:20px}
     p{margin:8px 0 16px 0;opacity:.9}
     canvas{border:1px solid #333;background:#1e1e1e;display:block}
-    /* Omezení gest – bez pinch/double-tap zoomu */
+    /* Potlačení pinch/double-tap zoomu */
     html, body, #app, canvas { touch-action: manipulation; }
   </style>
 </head>
@@ -25,9 +25,7 @@
     <canvas id="game" width="700" height="300"></canvas>
 
     <!-- DŮLEŽITÉ: správný script tag -->
-    script.js</script>
-
-    <!-- iOS: blok pinch + dvojitý tap -->
+    <script src="script.js  <!-- iOS: blok pinch + dvojitý tap -->
     <script>
       ['gesturestart','gesturechange','gestureend'].forEach(evt=>{
         window.addEventListener(evt, e => { e.preventDefault(); }, { passive:false });
@@ -41,4 +39,5 @@
     </script>
   </div>
 </body>
-</
+</html>
+``
