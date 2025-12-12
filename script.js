@@ -168,7 +168,6 @@ c.addEventListener("mousedown", e=>{
   const mx = e.clientX - r.left;
   const my = e.clientY - r.top;
 
-  // tlačítko změny obtížnosti
   if(mx>=10 && mx<=140 && my>=10 && my<=40){
     saveBest();
     mi = (mi+1) % modes.length;
@@ -204,24 +203,23 @@ c.addEventListener("touchstart", e=>{
 const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
 img.onload = ()=>{
-  if(isMobile){
+  if(!isMobile){
+    c.width = W;
+    c.height = H;
+    iw = 600;
+    ih = Math.round(img.naturalHeight * (iw / img.naturalWidth));
+    ix = Math.floor((W - iw)/2);
+    iy = 100;
+    SV = Math.floor(ih * 0.334);
+  } else {
     c.width = window.innerWidth;
     c.height = window.innerHeight;
-
-    const scale = c.width / img.naturalWidth;
+    const maxWidth = c.width * 0.9;   // obrázek zabere max 90% šířky obrazovky
+    const scale = Math.min(1, maxWidth / img.naturalWidth);
     iw = img.naturalWidth * scale;
     ih = img.naturalHeight * scale;
     ix = (c.width - iw)/2;
-    iy = 100 * (c.height / H);
-    SV = Math.floor(ih * 0.334);
-  } else {
-    c.width = W;
-    c.height = H;
-
-    iw = 600;
-    ih = Math.round(img.naturalHeight * (600/img.naturalWidth));
-    ix = Math.floor((W - iw)/2);
-    iy = 100;
+    iy = c.height*0.2;
     SV = Math.floor(ih * 0.334);
   }
 
