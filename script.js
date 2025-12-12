@@ -1,144 +1,137 @@
-(()=>{
 
-const W = 700, H = 300;
-const c = document.getElementById("game");
-const x = c.getContext("2d");
+<!-- script.js -->
+<script>
+(() => {
+  const W = 700, H = 300;
+  const c = document.getElementById("game");
+  const x = c.getContext("2d");
+  const img = new Image();
+  img.src = "obrazek.png";
 
-const img = new Image();
-img.src = "obrazek.png";
+  const colors = [
+    [0,255,255],[0,255,0],[255,255,0],[255,127,0],
+    [255,0,0],[255,0,255],[127,0,255],[0,0,255]
+  ];
+  const modes = ["easy","medium","hard"];
+  let mi = 0, mode = modes[mi];
+  const diff = {
+    easy:{tolerancePct:0.10,speed:1,acc:0.05},
+    medium:{tolerancePct:0.05,speed:2,acc:0.125},
+    hard:{tolerancePct:0.025,speed:3,acc:0.25}
+  };
+  const LS = "CasuaSlicerBest";
+  let best = { easy:0, medium:0, hard:0 };
+  try {
+    const s = JSON.parse(localStorage.getItem(LS));
+    if (s && typeof s === "object") best = {...best, ...s};
+  } catch {}
 
-const colors = [
-  [0,255,255],[0,255,0],[255,255,0],[255,127,0],
-  [255,0,0],[255,0,255],[127,0,255],[0,0,255]
-];
+  let iw=0, ih=0, ix=0, iy=100;
+  let SV=0, TOL=0, base=0, spd=0, co=0;
+  let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
 
-const modes = ["easy","medium","hard"];
-let mi = 0, mode = modes[mi];
-
-const diff = {
-  easy:{tolerancePct:0.10,speed:1,acc:0.05},
-  medium:{tolerancePct:0.05,speed:2,acc:0.125},
-  hard:{tolerancePct:0.025,speed:3,acc:0.25}
-};
-
-const LS = "CasuaSlicerBest";
-let best = { easy:0, medium:0, hard:0 };
-
-try {
-  const s = JSON.parse(localStorage.getItem(LS));
-  if (s && typeof s === "object") best = {...best, ...s};
-} catch {}
-
-let iw=0, ih=0, ix=0, iy=100;
-let SV=0, TOL=0, base=0, spd=0, co=0;
-let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
-
-function setMode(m){
-  const d = diff[m];
-  base = d.speed;
-  spd  = base - d.acc;
-  co   = base - 1;
-  TOL  = Math.floor(ih * d.tolerancePct);
-}
-
-function reset(full=false){
-  cut = null;
-  hit = false;
-  ly  = iy;
-  dir = 1;
-  if(full){
-    score = 0;
-    first = true;
-    spd = base - diff[mode].acc;
-  }
-}
-
-function saveBest(){
-  if(score > best[mode]){
-    best[mode] = score;
-    localStorage.setItem(LS, JSON.stringify(best));
-  }
-}
-
-function drawText(t,xp,yp,col="#fff",s=18,a="left"){
-  x.font = `${s}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
-  x.textBaseline = "top";
-  x.textAlign = a;
-  x.fillStyle = col;
-  x.fillText(t,xp,yp);
-}
-
-function drawLine(y,col,w=2){
-  x.strokeStyle=`rgb(${col[0]},${col[1]},${col[2]})`;
-  x.lineWidth=w;
-  x.beginPath();
-  x.moveTo(ix,y);
-  x.lineTo(ix+iw,y);
-  x.stroke();
-}
-
-function clamp(v,l,h){ return Math.max(l, Math.min(h, v)); }
-
-function update(){
-  if(cut===null){
-    ly += spd * dir;
-    if(ly <= iy){ ly = iy; dir = 1; }
-    if(ly >= iy+ih){ ly = iy+ih; dir = -1; }
-  }
-}
-
-function render(){
-  x.fillStyle = "#1e1e1e";
-  x.fillRect(0,0,W,H);
-
-  // Přepočet řezu na originální výšku obrázku
-  if(cut === null){
-    x.drawImage(img, ix, iy, iw, ih);
-  } else {
-    const srcH = img.naturalHeight;
-    const scale = ih / srcH;
-    const realCut = Math.round(cut / scale);
-
-    x.drawImage(
-      img,
-      0, realCut,
-      img.naturalWidth, srcH - realCut,
-      ix, iy + cut,
-      iw, ih - cut
-    );
+  function setMode(m){
+    const d = diff[m];
+    base = d.speed;
+    spd = base - d.acc;
+    co = base - 1;
+    TOL = Math.floor(ih * d.tolerancePct);
   }
 
-  if(cut === null){
-    const step = Math.trunc((spd - base) / 0.5);
-    const idx = clamp(co + step, 0, colors.length - 1);
-    drawLine(Math.round(ly), colors[idx], 2);
+  function reset(full=false){
+    cut = null;
+    hit = false;
+    ly = iy;
+    dir = 1;
+    if(full){
+      score = 0;
+      first = true;
+      spd = base - diff[mode].acc;
+    }
   }
 
-  drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
-  drawText(`Score: ${score}`,W-10,10,"#fff",16,"right");
-  drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
-
-  if(first){
-    drawText("Stiskni mezerník",W/2,10,"#fff",18,"center");
-  } else if(cut !== null){
-    drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
+  function saveBest(){
+    if(score > best[mode]){
+      best[mode] = score;
+      localStorage.setItem(LS, JSON.stringify(best));
+    }
   }
-}
 
-function loop(){
-  update();
-  render();
-  requestAnimationFrame(loop);
-}
+  function drawText(t,xp,yp,col="#fff",s=18,a="left"){
+    x.font = `${s}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
+    x.textBaseline = "top";
+    x.textAlign = a;
+    x.fillStyle = col;
+    x.fillText(t,xp,yp);
+  }
 
-window.addEventListener("keydown", e=>{
-  if(e.code==="Space"){
+  function drawLine(y,col,w=2){
+    x.strokeStyle=`rgb(${col[0]},${col[1]},${col[2]})`;
+    x.lineWidth=w;
+    x.beginPath();
+    x.moveTo(ix,y);
+    x.lineTo(ix+iw,y);
+    x.stroke();
+  }
+
+  function clamp(v,l,h){ return Math.max(l, Math.min(h, v)); }
+
+  function update(){
+    if(cut===null){
+      ly += spd * dir;
+      if(ly <= iy){ ly = iy; dir = 1; }
+      if(ly >= iy+ih){ ly = iy+ih; dir = -1; }
+    }
+  }
+
+  function render(){
+    x.fillStyle = "#1e1e1e";
+    x.fillRect(0,0,W,H);
+
+    // Přepočet řezu na originální výšku obrázku
+    if(cut === null){
+      x.drawImage(img, ix, iy, iw, ih);
+    } else {
+      const srcH = img.naturalHeight;
+      const scale = ih / srcH;
+      const realCut = Math.round(cut / scale);
+      x.drawImage(
+        img,
+        0, realCut,
+        img.naturalWidth, srcH - realCut,
+        ix, iy + cut,
+        iw, ih - cut
+      );
+    }
+
+    if(cut === null){
+      const step = Math.trunc((spd - base) / 0.5);
+      const idx = clamp(co + step, 0, colors.length - 1);
+      drawLine(Math.round(ly), colors[idx], 2);
+    }
+
+    drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
+    drawText(`Score: ${score}`,W-10,10,"#fff",16,"right");
+    drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
+    if(first){
+      drawText("Stiskni mezerník",W/2,10,"#fff",18,"center");
+    } else if(cut !== null){
+      drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
+    }
+  }
+
+  function loop(){
+    update();
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // --- NOVÉ: jednotná funkce pro spuštění řezu (Space / dotyk) ---
+  function triggerCut(){
     first=false;
-
     if(cut===null){
       let r = Math.round(ly - iy);
       r = clamp(r, 0, ih - 1);
-
       if(Math.abs(r - SV) <= TOL){
         hit=true;
         score++;
@@ -149,7 +142,6 @@ window.addEventListener("keydown", e=>{
         saveBest();
         spd = base - diff[mode].acc;
       }
-
       cut = r;
     } else {
       cut = null;
@@ -159,45 +151,78 @@ window.addEventListener("keydown", e=>{
       dir=1;
     }
   }
-});
 
-c.addEventListener("mousedown", e=>{
-  const r = c.getBoundingClientRect();
-  const mx = e.clientX - r.left;
-  const my = e.clientY - r.top;
+  // Klávesnice (Space)
+  window.addEventListener("keydown", e=>{
+    if(e.code==="Space") triggerCut();
+  });
 
-  if(mx>=10 && mx<=140 && my>=10 && my<=40){
-    saveBest();
-    mi = (mi+1) % modes.length;
-    mode = modes[mi];
+  // Myš – zachováno pouze přepínání režimu (žádná změna chování)
+  c.addEventListener("mousedown", e=>{
+    const r = c.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    if(mx>=10 && mx<=140 && my>=10 && my<=40){
+      saveBest();
+      mi = (mi+1) % modes.length;
+      mode = modes[mi];
+      setMode(mode);
+      reset(true);
+    }
+  });
+
+  // --- NOVÉ: Dotyk na mobilu – funguje kdekoli na stránce ---
+  // Tap uvnitř canvasu na oblast 10–140 × 10–40 přepíná režim,
+  // jinak (a i mimo canvas) spouští řez.
+  document.addEventListener("touchstart", (e)=>{
+    // povolit preventDefault – kvůli pasivním listenerům explicitně:
+  }, {passive:false});
+
+  document.addEventListener("touchstart", (e)=>{
+    e.preventDefault();
+    const t = e.touches && e.touches[0] ? e.touches[0] : null;
+    if (!t) { triggerCut(); return; }
+
+    const r = c.getBoundingClientRect();
+    const mx = t.clientX - r.left;
+    const my = t.clientY - r.top;
+
+    // Tap na přepínač režimu (jen pokud je uvnitř canvasu)
+    if (mx>=10 && mx<=140 && my>=10 && my<=40 &&
+        t.clientX>=r.left && t.clientX<=r.right &&
+        t.clientY>=r.top  && t.clientY<=r.bottom) {
+      saveBest();
+      mi = (mi+1) % modes.length;
+      mode = modes[mi];
+      setMode(mode);
+      reset(true);
+      return;
+    }
+
+    // Jinak spustit řez (i mimo canvas)
+    triggerCut();
+  }, {passive:false});
+
+  img.onload = ()=>{
+    const ow = img.naturalWidth;
+    const oh = img.naturalHeight;
+    const nw = 600;
+    const sc = nw / ow;
+    const nh = Math.round(oh * sc);
+    iw = nw;
+    ih = nh;
+    ix = Math.floor((W - iw) / 2);
+    iy = 100;
+    SV = Math.floor(ih * 0.334);
     setMode(mode);
     reset(true);
-  }
-});
+    requestAnimationFrame(loop);
+  };
 
-img.onload = ()=>{
-  const ow = img.naturalWidth;
-  const oh = img.naturalHeight;
-  const nw = 600;
-  const sc = nw / ow;
-  const nh = Math.round(oh * sc);
-
-  iw = nw;
-  ih = nh;
-  ix = Math.floor((W - iw) / 2);
-  iy = 100;
-
-  SV = Math.floor(ih * 0.334);
-
-  setMode(mode);
-  reset(true);
-  requestAnimationFrame(loop);
-};
-
-img.onerror = ()=>{
-  x.fillStyle="#1e1e1e";
-  x.fillRect(0,0,W,H);
-  drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
-};
-
+  img.onerror = ()=>{
+    x.fillStyle="#1e1e1e";
+    x.fillRect(0,0,W,H);
+    drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
+  };
 })();
+</
