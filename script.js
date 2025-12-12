@@ -29,9 +29,9 @@ try {
   if (s && typeof s === "object") best = {...best, ...s};
 } catch {}
 
-let iw=0, ih=0, ix=0, iy=100;
+let iw=0, ih=0, ix=0, iy=0;
 let SV=0, TOL=0, base=0, spd=0, co=0;
-let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
+let ly=0, dir=1, cut=null, hit=false, score=0, first=true;
 
 let zoom = 1;
 let lastDist = null;
@@ -96,14 +96,15 @@ function render(){
   x.clearRect(0,0,c.width,c.height);
 
   if(isMobile){
-    // celoplošný zoom na mobilu
-    x.setTransform(zoom,0,0,zoom,0,0);
-  } else {
-    x.setTransform(1,0,0,1,0,0);
-    x.fillStyle = "#1e1e1e";
-    x.fillRect(0,0,c.width,c.height);
+    x.save();
+    x.scale(zoom, zoom);
   }
 
+  // pozadí
+  x.fillStyle = "#1e1e1e";
+  x.fillRect(0,0,c.width, c.height);
+
+  // obrázek
   if(cut === null){
     x.drawImage(img, ix, iy, iw, ih);
   } else {
@@ -120,12 +121,14 @@ function render(){
     );
   }
 
+  // pohybující se linka
   if(cut === null){
     const step = Math.trunc((spd - base) / 0.5);
     const idx = clamp(co + step, 0, colors.length - 1);
     drawLine(Math.round(ly), colors[idx], 2);
   }
 
+  // texty
   drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
   drawText(`Score: ${score}`,c.width-10,10,"#fff",16,"right");
   drawText(`Best: ${best[mode]}`,c.width-10,28,"#fff",16,"right");
@@ -134,6 +137,10 @@ function render(){
     drawText("Stiskni mezerník nebo tap",c.width/2,10,"#fff",18,"center");
   } else if(cut !== null){
     drawText(hit ? "PERFECT!" : "FAIL!", c.width/2,10, hit?"#0f0":"#f00",20,"center");
+  }
+
+  if(isMobile){
+    x.restore();
   }
 }
 
@@ -242,10 +249,8 @@ img.onload = ()=>{
   } else {
     c.width = window.innerWidth;
     c.height = window.innerHeight;
-    const maxWidth = c.width * 0.9;
-    const scale = (maxWidth / img.naturalWidth);
-    iw = img.naturalWidth * scale;
-    ih = img.naturalHeight * scale;
+    iw = c.width * 0.9;
+    ih = iw * (img.naturalHeight / img.naturalWidth);
     ix = (c.width - iw)/2;
     iy = c.height*0.2;
     SV = Math.floor(ih * 0.334);
