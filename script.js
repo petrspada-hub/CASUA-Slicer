@@ -6,16 +6,14 @@
   const img = new Image();
   img.src = "obrazek.png";
 
-  // ---- Antihighlight a anti-select (iOS/Safari/Android) ----
-  // vše z JS, aby nebyla nutná úprava CSS/HTML souborů
+  // ---- Antihighlight a anti-select (Android/Chrome, iOS) ----
   c.setAttribute('tabindex', '-1');
   c.style.outline = 'none';
   c.style.userSelect = 'none';
   c.style.webkitUserSelect = 'none';
-  c.style.webkitTapHighlightColor = 'transparent';
-  c.style.touchAction = 'manipulation'; // omezí double‑tap zoom, zachová klik/tap
-  // zamezí kontextové nabídce na dlouhý stisk
-  c.addEventListener('contextmenu', e => e.preventDefault());
+  c.style.webkitTapHighlightColor = 'rgba(0,0,0,0)'; // spolehlivější než 'transparent' na Android/Chrome
+  c.style.touchAction = 'manipulation';              // omezení double‑tap zoomu, zachování tapu
+  c.addEventListener('contextmenu', e => e.preventDefault()); // bez kontextového menu
 
   const colors = [
     [0,255,255],[0,255,0],[255,255,0],[255,127,0],
@@ -162,9 +160,42 @@
     }
   });
 
-  // Jednotné ovládání: Pointer Events (myš i dotyk)
+  // --- Ovládání ukazatelem (myš i dotyk) + ochrana proti dvojímu spuštění ---
+  let lastTouchTS = 0;
+
+  // touchstart: potlačí nativní tap highlight ještě dřív než click/pointer
+  c.addEventListener("touchstart", e => {
+    e.preventDefault(); // nutně {passive:false}, viz níže
+    const r = c.getBoundingClientRect();
+    const t = e.changedTouches[0];
+    const mx = t.clientX - r.left;
+    const my = t.clientY - r.top;
+
+    // označ, že proběhl touch -> pointerdown z touch ignorujeme
+    lastTouchTS = Date.now();
+
+    // Přepínač režimu (vlevo nahoře)
+    if(mx>=10 && mx<=140 && my>=10 && my<=40){
+      saveBest();
+      mi = (mi+1) % modes.length;
+      mode = modes[mi];
+      setMode(mode);
+      reset(true);
+      return;
+    }
+    // Skryté tlačítko = oblast obrázku
+    if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
+      triggerSlice();
+    }
+  }, { passive: false });
+
+  // pointerdown: funguje pro myš i dotyk (dotyk ale odfiltrujeme, pokud už řešil touchstart)
   c.addEventListener("pointerdown", e=>{
-    // u dotyku zamezí sekundárním efektům (klik, scroll, highlight)
+    // pokud je to dotyk a nedávno šel touchstart, ignoruj (zabrání double‑fire)
+    if(e.pointerType === 'touch' && Date.now() - lastTouchTS < 350){
+      e.preventDefault();
+      return;
+    }
     e.preventDefault();
 
     const r = c.getBoundingClientRect();
@@ -186,6 +217,9 @@
       triggerSlice();
     }
   });
+
+  // Záloha: potlač click (některé prohlížeče jej po touch i tak vystřelí)
+  c.addEventListener("click", e => e.preventDefault(), { capture:true });
 
   // (volitelné) kurzor při najetí na obrázek
   c.addEventListener("pointermove", e=>{
@@ -217,3 +251,4 @@
     drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
   };
 })();
+``
