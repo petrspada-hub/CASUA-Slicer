@@ -24,10 +24,10 @@
     <p>Klikni/tapni kdekoli pro řez (mimo oblast přepínače obtížnosti vlevo nahoře).</p>
     <canvas id="game" width="700" height="300"></canvas>
 
-    <!-- Načtení herního skriptu -->
+    <!-- Načtení herního skriptu (DŮLEŽITÉ: správný tag) -->
     script.js</script>
 
-    <!-- iOS Safari: blok pinch + dvojitý tap zoom (komentář je správně ukončen) -->
+    <!-- iOS Safari: blok pinch + dvojitý tap zoom -->
     <script>
       ['gesturestart','gesturechange','gestureend'].forEach(evt=>{
         window.addEventListener(evt, e => { e.preventDefault(); }, { passive:false });
@@ -42,4 +42,3 @@
   </div>
 </body>
 </html>
-``
