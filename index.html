@@ -1,14 +1,43 @@
+
 <!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <title>CASUA Slicer (web)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="icon.png">
-  <link rel="stylesheet" href="style.css" />
+  <!-- Pevná šířka 700, bez možnosti zoomu -->
+  <meta name="viewport"
+        content="width=700, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>CASUA Slicer</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    html,body{height:100%;margin:0;background:#111;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+    #app{width:700px;margin:0 auto;padding:16px}
+    h1{margin:0 0 8px 0;font-size:20px}
+    p{margin:8px 0 16px 0;opacity:.9}
+    canvas{border:1px solid #333;background:#1e1e1e;display:block}
+    /* Omezení gest – bez pinch/double-tap zoomu */
+    html, body, #app, canvas { touch-action: manipulation; }
+  </style>
 </head>
 <body>
-  <canvas id="game" width="700" height="300"></canvas>
-  <script src="script.js"></script>
+  <div id="app">
+    <h1>CASUA Slicer</h1>
+    <p>Klikni/tapni kdekoli pro řez (mimo oblast přepínače obtížnosti vlevo nahoře).</p>
+    <canvas id="game" width="700" height="300"></canvas>
+
+    script.js</script>
+
+    <!-- iOS Safari: blok pinch + dvojitý tap zoom -->
+    <script>
+      ['gesturestart','gesturechange','gestureend'].forEach(evt=>{
+        window.addEventListener(evt, e => { e.preventDefault(); }, { passive:false });
+      });
+      let lastTouch = 0;
+      document.addEventListener('touchend', function(e){
+        const now = Date.now();
+        if (now - lastTouch <= 300) { e.preventDefault(); }
+        lastTouch = now;
+      }, {passive:false});
+    </script>
+  </div>
 </body>
-</html>
+</
