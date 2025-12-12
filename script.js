@@ -1,12 +1,10 @@
 
-<script>
-(() => {
+(()=> {
   const W = 700, H = 300;
   const c = document.getElementById("game");
   const x = c.getContext("2d");
   const img = new Image();
   img.src = "obrazek.png";
-
   const colors = [
     [0,255,255],[0,255,0],[255,255,0],[255,127,0],
     [255,0,0],[255,0,255],[127,0,255],[0,0,255]
@@ -36,7 +34,6 @@
     co = base - 1;
     TOL = Math.floor(ih * d.tolerancePct);
   }
-
   function reset(full=false){
     cut = null;
     hit = false;
@@ -48,14 +45,12 @@
       spd = base - diff[mode].acc;
     }
   }
-
   function saveBest(){
     if(score > best[mode]){
       best[mode] = score;
       localStorage.setItem(LS, JSON.stringify(best));
     }
   }
-
   function drawText(t,xp,yp,col="#fff",s=18,a="left"){
     x.font = `${s}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
     x.textBaseline = "top";
@@ -63,7 +58,6 @@
     x.fillStyle = col;
     x.fillText(t,xp,yp);
   }
-
   function drawLine(y,col,w=2){
     x.strokeStyle=`rgb(${col[0]},${col[1]},${col[2]})`;
     x.lineWidth=w;
@@ -72,9 +66,7 @@
     x.lineTo(ix+iw,y);
     x.stroke();
   }
-
   function clamp(v,l,h){ return Math.max(l, Math.min(h, v)); }
-
   function update(){
     if(cut===null){
       ly += spd * dir;
@@ -82,11 +74,11 @@
       if(ly >= iy+ih){ ly = iy+ih; dir = -1; }
     }
   }
-
   function render(){
     x.fillStyle = "#1e1e1e";
     x.fillRect(0,0,W,H);
 
+    // Přepočet řezu na originální výšku obrázku
     if(cut === null){
       x.drawImage(img, ix, iy, iw, ih);
     } else {
@@ -111,21 +103,21 @@
     drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
     drawText(`Score: ${score}`,W-10,10,"#fff",16,"right");
     drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
+
     if(first){
-      drawText("Stiskni mezerník nebo klikni/tapni do obrázku",W/2,10,"#fff",18,"center");
+      drawText("Stiskni mezerník nebo klikni na obrázek",W/2,10,"#fff",18,"center");
     } else if(cut !== null){
       drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
     }
   }
-
   function loop(){
     update();
     render();
     requestAnimationFrame(loop);
   }
 
-  // --- Jednotné provedení řezu ---
-  function triggerCut(){
+  // >>> Nová společná akce pro Space + klik na obrázek
+  function triggerSlice(){
     first=false;
     if(cut===null){
       let r = Math.round(ly - iy);
@@ -150,20 +142,19 @@
     }
   }
 
-  // Klávesnice (Space)
   window.addEventListener("keydown", e=>{
-    if(e.code==="Space") triggerCut();
+    if(e.code==="Space"){
+      triggerSlice();
+    }
   });
 
-  // --- Obrázek jako tlačítko: pointerdown uvnitř obrázku => řez ---
-  //   Pointer Events fungují pro myš, dotyk i stylus.
-  c.addEventListener("pointerdown", (e)=>{
+  c.addEventListener("mousedown", e=>{
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
 
-    // 1) přepínač režimu (uvnitř canvasu)
-    if (mx>=10 && mx<=140 && my>=10 && my<=40){
+    // Přepínač režimu (zachováno)
+    if(mx>=10 && mx<=140 && my>=10 && my<=40){
       saveBest();
       mi = (mi+1) % modes.length;
       mode = modes[mi];
@@ -172,14 +163,11 @@
       return;
     }
 
-    // 2) klik/tap do obrázku => spustit řez
-    const inImage = (mx>=ix && mx<=ix+iw && my>=iy && my<=iy+ih);
-    if (inImage){
-      // potlačíme double-tap zoom/scroll na mobilech
-      e.preventDefault?.();
-      triggerCut();
+    // Skryté tlačítko = klik na obrázek
+    if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
+      triggerSlice();
     }
-  }, {passive:false});
+  });
 
   img.onload = ()=>{
     const ow = img.naturalWidth;
@@ -195,13 +183,19 @@
     setMode(mode);
     reset(true);
     requestAnimationFrame(loop);
-  };
 
+    // (volitelné) kurzor při najetí na obrázek
+    c.addEventListener("mousemove", e=>{
+      const rect = c.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const overImage = (mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih);
+      c.style.cursor = overImage ? "pointer" : "default";
+    });
+  };
   img.onerror = ()=>{
     x.fillStyle="#1e1e1e";
     x.fillRect(0,0,W,H);
     drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
   };
 })();
-</script>
-``
