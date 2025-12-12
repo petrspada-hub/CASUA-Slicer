@@ -149,7 +149,7 @@
     drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
 
     if(first){
-      drawText("Stiskni mezerník nebo klepni/klikni na obrázek",W/2,10,"#fff",18,"center");
+      drawText("Stiskni mezerník nebo klikni na CASUA",W/2,10,"#fff",18,"center");
     } else if(cut !== null){
       drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
     }
@@ -271,3 +271,4 @@
   };
 })();
 ``
+
