@@ -3,8 +3,7 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
   <title>CASUA Slicer (web)</title>
 
   <style>
@@ -17,8 +16,8 @@
     canvas{ display:block; width:var(--W); height:var(--H); }
   </style>
 
-  <!-- DŮLEŽITÉ: relativní cesta + defer + cache buster -->
-  ./script.js?v=3</script>
+  <!-- Relativní cesta + defer + cache buster -->
+  ./script.js?v=4</script>
 </head>
 <body>
   <div class="wrap">
@@ -27,17 +26,17 @@
     </div>
   </div>
 
-  <!-- Auto-scale a zákaz zoomu – může zůstat tady (po načtení DOM) -->
+  <!-- Auto-scale + zákaz zoomu -->
   <script>
     function updateScale() {
       const W=700, H=300;
       const scaleW = Math.min(window.innerWidth / W, 1);
       const scaleH = Math.min(window.innerHeight / (H+24), 1);
-      const scale = Math.min(scaleW, scaleH);
+      const scale  = Math.min(scaleW, scaleH);
       const app = document.getElementById('app');
       if (app) app.style.transform = `scale(${scale})`;
     }
-    updateScale();
+    window.addEventListener('DOMContentLoaded', updateScale);
     addEventListener('resize', updateScale);
     addEventListener('orientationchange', updateScale);
 
