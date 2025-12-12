@@ -93,12 +93,13 @@ function update(){
 }
 
 function render(){
-  x.save();
+  x.clearRect(0,0,c.width,c.height);
 
   if(isMobile){
-    x.clearRect(0,0,c.width,c.height);
-    x.scale(zoom, zoom);
+    // celoplošný zoom na mobilu
+    x.setTransform(zoom,0,0,zoom,0,0);
   } else {
+    x.setTransform(1,0,0,1,0,0);
     x.fillStyle = "#1e1e1e";
     x.fillRect(0,0,c.width,c.height);
   }
@@ -134,8 +135,6 @@ function render(){
   } else if(cut !== null){
     drawText(hit ? "PERFECT!" : "FAIL!", c.width/2,10, hit?"#0f0":"#f00",20,"center");
   }
-
-  x.restore();
 }
 
 function loop(){
