@@ -6,7 +6,7 @@
   const img = new Image();
   img.src = "obrazek.png";
 
-  // ---- Globální vypnutí tap highlight (pro jistotu) ----
+  // ---- Anti highlight + anti select (globálně) ----
   (function injectNoTapCSS(){
     const css = `
       html, body, canvas, #game, .hitbox {
@@ -18,8 +18,9 @@
       .hitbox {
         position: absolute;
         background: transparent;
-        touch-action: manipulation; /* povolí klepnutí, omezí double-tap zoom */
+        touch-action: none;            /* vypne nativní gesta (scroll/zoom) nad hitboxem */
         -webkit-touch-callout: none;
+        z-index: 9999;
       }
     `;
     const style = document.createElement('style');
@@ -27,25 +28,27 @@
     document.head.appendChild(style);
   })();
 
-  // ---- Vytvoření průhledného hitboxu nad canvasem ----
+  // ---- Průhledný HITBOX nad canvasem (bere interakce) ----
   const hitbox = document.createElement('div');
   hitbox.className = 'hitbox';
-  const parent = c.parentElement || document.body;
-  const parentStyle = getComputedStyle(parent);
-  if (parentStyle.position === 'static') parent.style.position = 'relative';
 
-  // Canvas: pouze kreslení, bez interakce
+  // Parent musí být relativní (kvůli absolute hitboxu)
+  const parent = c.parentElement || document.body;
+  const ps = getComputedStyle(parent);
+  if (ps.position === 'static') parent.style.position = 'relative';
+
+  // Canvas: jen kreslení (bez interakce)
   c.setAttribute('tabindex', '-1');
   c.style.outline = 'none';
   c.style.userSelect = 'none';
   c.style.webkitUserSelect = 'none';
   c.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
-  c.style.touchAction = 'manipulation';
+  c.style.touchAction = 'none';
   c.addEventListener('contextmenu', e => e.preventDefault());
 
   parent.appendChild(hitbox);
 
-  // --- Hra ---
+  // --- Herní proměnné a funkce ---
   const colors = [
     [0,255,255],[0,255,0],[255,255,0],[255,127,0],
     [255,0,0],[255,0,255],[127,0,255],[0,0,255]
@@ -191,8 +194,8 @@
     }
   });
 
-  // ---- Interakce přes HITBOX ----
-  function handlePointer(mx, my){
+  // --- Interakce přes HITBOX ---
+  function handle(mx, my){
     // Přepínač režimu (vlevo nahoře)
     if(mx>=10 && mx<=140 && my>=10 && my<=40){
       saveBest();
@@ -208,31 +211,30 @@
     }
   }
 
-  // Mobil: obsluhujeme jen přes TOUCH (žádný pointerdown pro touch)
-  hitbox.addEventListener("touchend", e=>{
-    e.preventDefault();
-    const r = c.getBoundingClientRect();
-    const t = e.changedTouches[0];
-    const mx = t.clientX - r.left;
-    const my = t.clientY - r.top;
-    handlePointer(mx, my);
-  }, { passive: false });
-
   // Myš/pero: pointerdown
   hitbox.addEventListener("pointerdown", e=>{
-    // ignoruj dotykové pointery – touch řešíme výše přes touchend
-    if(e.pointerType === 'touch'){ e.preventDefault(); return; }
+    if(e.pointerType !== 'mouse' && e.pointerType !== 'pen') return; // touch řešíme v pointerup
     e.preventDefault();
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
-    handlePointer(mx, my);
+    handle(mx, my);
   });
 
-  // Záloha: potlač click (některé prohlížeče jej vystřelí po touch)
-  hitbox.addEventListener("click", e=> e.preventDefault(), { capture:true });
+  // Mobil (touch): pouze pointerup → zabrání dvojímu kliknutí
+  hitbox.addEventListener("pointerup", e=>{
+    if(e.pointerType !== 'touch') return;
+    e.preventDefault();
+    const r = c.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    handle(mx, my);
+  });
 
-  // Volitelně kurzor: pointer jen nad obrázkem (pro myš)
+  // Potlačit click (některé prohlížeče jej vystřelí po touch)
+  hitbox.addEventListener("click", e=> { e.preventDefault(); e.stopPropagation(); }, { capture:true });
+
+  // Kurzor (jen pro myš)
   hitbox.addEventListener("pointermove", e=>{
     if(e.pointerType === 'touch') return;
     const r = c.getBoundingClientRect();
@@ -242,22 +244,21 @@
     hitbox.style.cursor = overImage ? "pointer" : "default";
   });
 
-  // --- Umístění a velikost HITBOXU ---
+  // --- Umístění a velikost HITBOXU (stabilní) ---
   function placeHitbox(){
-    const rect = c.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
-    const left = rect.left - parentRect.left + parent.scrollLeft;
-    const top  = rect.top  - parentRect.top  + parent.scrollTop;
-    hitbox.style.left = `${left}px`;
-    hitbox.style.top  = `${top}px`;
-    hitbox.style.width = `${rect.width}px`;
-    hitbox.style.height= `${rect.height}px`;
+    // relativně k parentu: přes offsety je to stabilní i při scrollu
+    hitbox.style.left   = `${c.offsetLeft}px`;
+    hitbox.style.top    = `${c.offsetTop}px`;
+    hitbox.style.width  = `${c.offsetWidth}px`;
+    hitbox.style.height = `${c.offsetHeight}px`;
   }
 
-  ["resize","scroll"].forEach(ev=>{
-    window.addEventListener(ev, placeHitbox, { passive:true });
-    parent.addEventListener(ev, placeHitbox, { passive:true });
-  });
+  // Aktualizace při změně velikosti/umistění
+  const ro = new ResizeObserver(placeHitbox);
+  ro.observe(c);
+  window.addEventListener('resize', placeHitbox, { passive:true });
+  window.addEventListener('orientationchange', placeHitbox, { passive:true });
+  parent.addEventListener('scroll', placeHitbox, { passive:true });
 
   img.onload = ()=>{
     const ow = img.naturalWidth;
@@ -278,7 +279,9 @@
 
   img.onerror = ()=>{
     x.fillStyle="#1e1e1e";
-       x.fillRect(0,0,W,H);
+    x.fillRect(0,0,W,H);
     drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
     placeHitbox();
   };
+})();
+``
