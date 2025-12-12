@@ -36,6 +36,8 @@ let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
 let zoom = 1;
 let lastDist = null;
 
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
 function setMode(m){
   const d = diff[m];
   base = d.speed;
@@ -91,22 +93,29 @@ function update(){
 }
 
 function render(){
-  x.fillStyle = "#1e1e1e";
-  x.fillRect(0,0,c.width,c.height);
+  x.save();
+
+  if(isMobile){
+    x.clearRect(0,0,c.width,c.height);
+    x.scale(zoom, zoom);
+  } else {
+    x.fillStyle = "#1e1e1e";
+    x.fillRect(0,0,c.width,c.height);
+  }
 
   if(cut === null){
-    x.drawImage(img, ix, iy, iw*zoom, ih*zoom);
+    x.drawImage(img, ix, iy, iw, ih);
   } else {
     const srcH = img.naturalHeight;
-    const scale = (ih*zoom) / srcH;
+    const scale = ih / srcH;
     const realCut = Math.round(cut / scale);
 
     x.drawImage(
       img,
       0, realCut,
       img.naturalWidth, srcH - realCut,
-      ix, iy + cut*zoom,
-      iw*zoom, ih*zoom - cut*zoom
+      ix, iy + cut,
+      iw, ih - cut
     );
   }
 
@@ -125,6 +134,8 @@ function render(){
   } else if(cut !== null){
     drawText(hit ? "PERFECT!" : "FAIL!", c.width/2,10, hit?"#0f0":"#f00",20,"center");
   }
+
+  x.restore();
 }
 
 function loop(){
@@ -219,9 +230,6 @@ function getDistance(touches){
   const dy = touches[0].clientY - touches[1].clientY;
   return Math.sqrt(dx*dx + dy*dy);
 }
-
-// Detekce mobilu
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
 img.onload = ()=>{
   if(!isMobile){
