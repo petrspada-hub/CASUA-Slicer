@@ -1,10 +1,22 @@
 
-(()=> {
+(()=>{
   const W = 700, H = 300;
   const c = document.getElementById("game");
   const x = c.getContext("2d");
   const img = new Image();
   img.src = "obrazek.png";
+
+  // ---- Antihighlight a anti-select (iOS/Safari/Android) ----
+  // vše z JS, aby nebyla nutná úprava CSS/HTML souborů
+  c.setAttribute('tabindex', '-1');
+  c.style.outline = 'none';
+  c.style.userSelect = 'none';
+  c.style.webkitUserSelect = 'none';
+  c.style.webkitTapHighlightColor = 'transparent';
+  c.style.touchAction = 'manipulation'; // omezí double‑tap zoom, zachová klik/tap
+  // zamezí kontextové nabídce na dlouhý stisk
+  c.addEventListener('contextmenu', e => e.preventDefault());
+
   const colors = [
     [0,255,255],[0,255,0],[255,255,0],[255,127,0],
     [255,0,0],[255,0,255],[127,0,255],[0,0,255]
@@ -105,7 +117,7 @@
     drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
 
     if(first){
-      drawText("Stiskni mezerník nebo klikni na obrázek",W/2,10,"#fff",18,"center");
+      drawText("Stiskni mezerník nebo klepni/klikni na obrázek",W/2,10,"#fff",18,"center");
     } else if(cut !== null){
       drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
     }
@@ -116,7 +128,7 @@
     requestAnimationFrame(loop);
   }
 
-  // >>> Nová společná akce pro Space + klik na obrázek
+  // --- Společná akce pro Space + tap/klik na obrázek ---
   function triggerSlice(){
     first=false;
     if(cut===null){
@@ -142,18 +154,24 @@
     }
   }
 
+  // Klávesnice: Space
   window.addEventListener("keydown", e=>{
     if(e.code==="Space"){
+      e.preventDefault(); // potlačí scroll stránkou
       triggerSlice();
     }
   });
 
-  c.addEventListener("mousedown", e=>{
+  // Jednotné ovládání: Pointer Events (myš i dotyk)
+  c.addEventListener("pointerdown", e=>{
+    // u dotyku zamezí sekundárním efektům (klik, scroll, highlight)
+    e.preventDefault();
+
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
 
-    // Přepínač režimu (zachováno)
+    // Přepínač režimu (vlevo nahoře)
     if(mx>=10 && mx<=140 && my>=10 && my<=40){
       saveBest();
       mi = (mi+1) % modes.length;
@@ -163,10 +181,19 @@
       return;
     }
 
-    // Skryté tlačítko = klik na obrázek
+    // Skryté tlačítko = oblast obrázku
     if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
       triggerSlice();
     }
+  });
+
+  // (volitelné) kurzor při najetí na obrázek
+  c.addEventListener("pointermove", e=>{
+    const r = c.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const overImage = (mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih);
+    c.style.cursor = overImage ? "pointer" : "default";
   });
 
   img.onload = ()=>{
@@ -183,15 +210,6 @@
     setMode(mode);
     reset(true);
     requestAnimationFrame(loop);
-
-    // (volitelné) kurzor při najetí na obrázek
-    c.addEventListener("mousemove", e=>{
-      const rect = c.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const overImage = (mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih);
-      c.style.cursor = overImage ? "pointer" : "default";
-    });
   };
   img.onerror = ()=>{
     x.fillStyle="#1e1e1e";
