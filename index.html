@@ -6,6 +6,7 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
   <title>CASUA Slicer (web)</title>
+
   <style>
     :root { --W: 700px; --H: 300px; }
     html, body {
@@ -17,12 +18,13 @@
       -webkit-text-size-adjust: 100%;
     }
     .wrap { display:flex; justify-content:center; align-items:flex-start; padding:12px 8px; }
-    #app { width: var(--W); height: var(--H); transform-origin: top center; }
-    canvas { display:block; width: var(--W); height: var(--H); }
+    #app  { width: var(--W); height: var(--H); transform-origin: top center; }
+    canvas{ display:block; width: var(--W); height: var(--H); }
   </style>
 
-  <!-- DŮLEŽITÉ: skutečný soubor script.js -->
-  <script src="script.js"></script>
+  <!-- DŮLEŽITÉ: odkaz na skutečný soubor -->
+  script.js</script>
+</head>
 <body>
   <div class="wrap">
     <div id="app">
@@ -30,7 +32,7 @@
     </div>
   </div>
 
-  <!-- Auto-scale (po načtení herní logiky) -->
+  <!-- Auto-scale + zákaz zoomu (spouštět po načtení script.js) -->
   <script>
     function updateScale() {
       const W = 700, H = 300;
@@ -39,13 +41,12 @@
       const scale = Math.min(scaleW, scaleH);
       const app = document.getElementById('app');
       if (app) app.style.transform = `scale(${scale})`;
-      // Debug (dočasně): console.log('scale', scale);
     }
     updateScale();
     addEventListener('resize', updateScale);
     addEventListener('orientationchange', updateScale);
 
-    // Zákaz zoomu
+    // zákaz zoomu
     document.addEventListener('gesturestart', e => e.preventDefault());
     document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
     document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
