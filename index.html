@@ -3,10 +3,8 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <!-- Automatické přizpůsobení šířce a zákaz uživatelského zoomu -->
   <meta name="viewport"
-        content="width=device-width, initial-scale=1,
-                 maximum-scale=1, minimum-scale=1, user-scalable=no" />
+        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
   <title>CASUA Slicer (web)</title>
   <style>
     :root { --W: 700px; --H: 300px; }
@@ -14,53 +12,43 @@
       height: 100%; margin: 0;
       background: #1e1e1e; color: #fff;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      /* potlačení double-tap/pinch, lepší chování na mobilu */
       touch-action: manipulation;
       overscroll-behavior: none;
       -webkit-text-size-adjust: 100%;
     }
-    .wrap {
-      display: flex; justify-content: center; align-items: flex-start;
-      padding: 12px 8px;
-    }
-    /* kontejner pro škálování plátna */
-    #app {
-      width: var(--W);
-      height: var(--H);
-      transform-origin: top center;
-    }
-    canvas { display: block; width: var(--W); height: var(--H); }
+    .wrap { display:flex; justify-content:center; align-items:flex-start; padding:12px 8px; }
+    #app { width: var(--W); height: var(--H); transform-origin: top center; }
+    canvas { display:block; width: var(--W); height: var(--H); }
   </style>
-</head>
+
+  <!-- DŮLEŽITÉ: skutečný soubor script.js -->
+  <script src="script.jsead>
 <body>
   <div class="wrap">
     <div id="app">
-      <!-- Pevná vnitřní velikost – logika hry běží na 700×300,
-           zobrazení se jen škáluje, aby seděla šířka na mobilu -->
       <canvas id="game" width="700" height="300"></canvas>
     </div>
   </div>
 
-  script.js</script>
+  <!-- Auto-scale (po načtení herní logiky) -->
   <script>
-    // Auto-scale podle šířky (a rozumně i podle výšky při otočení)
     function updateScale() {
       const W = 700, H = 300;
-      // Škálujeme max. na 1 (na PC zůstane 1:1), na mobilu zmenšíme
       const scaleW = Math.min(window.innerWidth / W, 1);
-      // Trochu zohledníme výšku, aby se to při otočení také vešlo
       const scaleH = Math.min(window.innerHeight / (H + 24), 1);
       const scale = Math.min(scaleW, scaleH);
-      document.getElementById('app').style.transform = `scale(${scale})`;
+      const app = document.getElementById('app');
+      if (app) app.style.transform = `scale(${scale})`;
+      // Debug (dočasně): console.log('scale', scale);
     }
     updateScale();
     addEventListener('resize', updateScale);
     addEventListener('orientationchange', updateScale);
 
-    // Tvrdé zamezení zoomu/pinch/double-tap (iOS/Android + desktop)
+    // Zákaz zoomu
     document.addEventListener('gesturestart', e => e.preventDefault());
     document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
     document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
   </script>
 </body>
-</html>
+</
