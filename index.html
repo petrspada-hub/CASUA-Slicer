@@ -3,41 +3,64 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <!-- Pevná šířka 700, bez možnosti zoomu -->
+  <!-- Automatické přizpůsobení šířce a zákaz uživatelského zoomu -->
   <meta name="viewport"
-        content="width=700, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>CASUA Slicer</title>
-  <meta name="color-scheme" content="dark light" />
+        content="width=device-width, initial-scale=1,
+                 maximum-scale=1, minimum-scale=1, user-scalable=no" />
+  <title>CASUA Slicer (web)</title>
   <style>
-    html,body{height:100%;margin:0;background:#111;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
-    #app{width:700px;margin:0 auto;padding:16px}
-    h1{margin:0 0 8px 0;font-size:20px}
-    p{margin:8px 0 16px 0;opacity:.9}
-    canvas{border:1px solid #333;background:#1e1e1e;display:block}
-    /* Potlačení pinch/double-tap zoomu */
-    html, body, #app, canvas { touch-action: manipulation; }
+    :root { --W: 700px; --H: 300px; }
+    html, body {
+      height: 100%; margin: 0;
+      background: #1e1e1e; color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      /* potlačení double-tap/pinch, lepší chování na mobilu */
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap {
+      display: flex; justify-content: center; align-items: flex-start;
+      padding: 12px 8px;
+    }
+    /* kontejner pro škálování plátna */
+    #app {
+      width: var(--W);
+      height: var(--H);
+      transform-origin: top center;
+    }
+    canvas { display: block; width: var(--W); height: var(--H); }
   </style>
 </head>
 <body>
-  <div id="app">
-    <h1>CASUA Slicer</h1>
-    <p>Klikni/tapni kdekoli pro řez (mimo oblast přepínače obtížnosti vlevo nahoře).</p>
-    <canvas id="game" width="700" height="300"></canvas>
-
-    <!-- DŮLEŽITÉ: správný script tag -->
-    <script src="script.js  <!-- iOS: blok pinch + dvojitý tap -->
-    <script>
-      ['gesturestart','gesturechange','gestureend'].forEach(evt=>{
-        window.addEventListener(evt, e => { e.preventDefault(); }, { passive:false });
-      });
-      let lastTouch = 0;
-      document.addEventListener('touchend', function(e){
-        const now = Date.now();
-        if (now - lastTouch <= 300) { e.preventDefault(); }
-        lastTouch = now;
-      }, {passive:false});
-    </script>
+  <div class="wrap">
+    <div id="app">
+      <!-- Pevná vnitřní velikost – logika hry běží na 700×300,
+           zobrazení se jen škáluje, aby seděla šířka na mobilu -->
+      <canvas id="game" width="700" height="300"></canvas>
+    </div>
   </div>
+
+  script.js</script>
+  <script>
+    // Auto-scale podle šířky (a rozumně i podle výšky při otočení)
+    function updateScale() {
+      const W = 700, H = 300;
+      // Škálujeme max. na 1 (na PC zůstane 1:1), na mobilu zmenšíme
+      const scaleW = Math.min(window.innerWidth / W, 1);
+      // Trochu zohledníme výšku, aby se to při otočení také vešlo
+      const scaleH = Math.min(window.innerHeight / (H + 24), 1);
+      const scale = Math.min(scaleW, scaleH);
+      document.getElementById('app').style.transform = `scale(${scale})`;
+    }
+    updateScale();
+    addEventListener('resize', updateScale);
+    addEventListener('orientationchange', updateScale);
+
+    // Tvrdé zamezení zoomu/pinch/double-tap (iOS/Android + desktop)
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+    document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  </script>
 </body>
 </html>
-``
