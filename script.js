@@ -1,4 +1,4 @@
-(() => {
+(()=>{
 
 const W = 700, H = 300;
 const c = document.getElementById("game");
@@ -29,14 +29,9 @@ try {
   if (s && typeof s === "object") best = {...best, ...s};
 } catch {}
 
-let iw=0, ih=0, ix=0, iy=0;
+let iw=0, ih=0, ix=0, iy=100;
 let SV=0, TOL=0, base=0, spd=0, co=0;
-let ly=0, dir=1, cut=null, hit=false, score=0, first=true;
-
-let zoom = 1;
-let lastDist = null;
-
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
 
 function setMode(m){
   const d = diff[m];
@@ -93,18 +88,10 @@ function update(){
 }
 
 function render(){
-  x.clearRect(0,0,c.width,c.height);
-
-  if(isMobile){
-    x.save();
-    x.scale(zoom, zoom);
-  }
-
-  // pozadí
   x.fillStyle = "#1e1e1e";
-  x.fillRect(0,0,c.width, c.height);
+  x.fillRect(0,0,W,H);
 
-  // obrázek
+  // Přepočet řezu na originální výšku obrázku
   if(cut === null){
     x.drawImage(img, ix, iy, iw, ih);
   } else {
@@ -121,26 +108,20 @@ function render(){
     );
   }
 
-  // pohybující se linka
   if(cut === null){
     const step = Math.trunc((spd - base) / 0.5);
     const idx = clamp(co + step, 0, colors.length - 1);
     drawLine(Math.round(ly), colors[idx], 2);
   }
 
-  // texty
   drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
-  drawText(`Score: ${score}`,c.width-10,10,"#fff",16,"right");
-  drawText(`Best: ${best[mode]}`,c.width-10,28,"#fff",16,"right");
+  drawText(`Score: ${score}`,W-10,10,"#fff",16,"right");
+  drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
 
   if(first){
-    drawText("Stiskni mezerník nebo tap",c.width/2,10,"#fff",18,"center");
+    drawText("Stiskni mezerník",W/2,10,"#fff",18,"center");
   } else if(cut !== null){
-    drawText(hit ? "PERFECT!" : "FAIL!", c.width/2,10, hit?"#0f0":"#f00",20,"center");
-  }
-
-  if(isMobile){
-    x.restore();
+    drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
   }
 }
 
@@ -150,39 +131,36 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-function triggerCut(){
-  first=false;
-  if(cut===null){
-    let r = Math.round(ly - iy);
-    r = clamp(r, 0, ih - 1);
-
-    if(Math.abs(r - SV) <= TOL){
-      hit=true;
-      score++;
-      spd += diff[mode].acc;
-      r = SV;
-    } else {
-      hit=false;
-      saveBest();
-      spd = base - diff[mode].acc;
-    }
-
-    cut = r;
-  } else {
-    cut = null;
-    if(!hit) score = 0;
-    hit=false;
-    ly=iy;
-    dir=1;
-  }
-}
-
-// PC klávesnice
 window.addEventListener("keydown", e=>{
-  if(e.code==="Space") triggerCut();
+  if(e.code==="Space"){
+    first=false;
+
+    if(cut===null){
+      let r = Math.round(ly - iy);
+      r = clamp(r, 0, ih - 1);
+
+      if(Math.abs(r - SV) <= TOL){
+        hit=true;
+        score++;
+        spd += diff[mode].acc;
+        r = SV;
+      } else {
+        hit=false;
+        saveBest();
+        spd = base - diff[mode].acc;
+      }
+
+      cut = r;
+    } else {
+      cut = null;
+      if(!hit) score = 0;
+      hit=false;
+      ly=iy;
+      dir=1;
+    }
+  }
 });
 
-// PC myš
 c.addEventListener("mousedown", e=>{
   const r = c.getBoundingClientRect();
   const mx = e.clientX - r.left;
@@ -194,67 +172,22 @@ c.addEventListener("mousedown", e=>{
     mode = modes[mi];
     setMode(mode);
     reset(true);
-    return;
-  }
-
-  triggerCut();
-});
-
-// Mobilní dotyk
-c.addEventListener("touchstart", e=>{
-  e.preventDefault();
-  if(e.touches.length === 1){
-    const t = e.touches[0];
-    if(t.clientX>=10 && t.clientX<=140 && t.clientY>=10 && t.clientY<=40){
-      saveBest();
-      mi = (mi+1) % modes.length;
-      mode = modes[mi];
-      setMode(mode);
-      reset(true);
-      return;
-    }
-    triggerCut();
-  } else if(e.touches.length === 2){
-    lastDist = getDistance(e.touches);
   }
 });
-
-c.addEventListener("touchmove", e=>{
-  if(e.touches.length === 2 && lastDist){
-    const newDist = getDistance(e.touches);
-    zoom *= newDist / lastDist;
-    lastDist = newDist;
-  }
-});
-
-c.addEventListener("touchend", e=>{
-  if(e.touches.length < 2) lastDist = null;
-});
-
-function getDistance(touches){
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
-}
 
 img.onload = ()=>{
-  if(!isMobile){
-    c.width = W;
-    c.height = H;
-    iw = 600;
-    ih = Math.round(img.naturalHeight * (iw / img.naturalWidth));
-    ix = Math.floor((W - iw)/2);
-    iy = 100;
-    SV = Math.floor(ih * 0.334);
-  } else {
-    c.width = window.innerWidth;
-    c.height = window.innerHeight;
-    iw = c.width * 0.9;
-    ih = iw * (img.naturalHeight / img.naturalWidth);
-    ix = (c.width - iw)/2;
-    iy = c.height*0.2;
-    SV = Math.floor(ih * 0.334);
-  }
+  const ow = img.naturalWidth;
+  const oh = img.naturalHeight;
+  const nw = 600;
+  const sc = nw / ow;
+  const nh = Math.round(oh * sc);
+
+  iw = nw;
+  ih = nh;
+  ix = Math.floor((W - iw) / 2);
+  iy = 100;
+
+  SV = Math.floor(ih * 0.334);
 
   setMode(mode);
   reset(true);
@@ -263,8 +196,8 @@ img.onload = ()=>{
 
 img.onerror = ()=>{
   x.fillStyle="#1e1e1e";
-  x.fillRect(0,0,c.width,c.height);
-  drawText("Chybí soubor obrazek.png",c.width/2,c.height/2-10,"#f88",18,"center");
+  x.fillRect(0,0,W,H);
+  drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
 };
 
 })();
