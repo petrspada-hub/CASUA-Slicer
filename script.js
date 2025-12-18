@@ -1,274 +1,36 @@
 
-(()=>{
-  const W = 700, H = 300;
-  const c = document.getElementById("game");
-  const x = c.getContext("2d");
-  const img = new Image();
-  img.src = "obrazek.png";
+(() => {
+  const SUPABASE_URL = "https://wqjfwcsrugopmottwmtl.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxamZ3Y3NydWdvcG1vdHR3bXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTMyMjIsImV4cCI6MjA4MTQyOTIyMn0.OztHP1F8II2zSKJb1biDqKs1xvO6Z8rWYsI2WSK8St8";
 
-  // ---- CSS proti tap-highlight (globálně) ----
-  (function injectNoTapCSS(){
-    const css = `
-      html, body, canvas, #game, .hitbox {
-        -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-        -webkit-user-select: none !important;
-        user-select: none !important;
-        outline: none !important;
-      }
-      .hitbox {
-        position: absolute;
-        background: transparent;
-        touch-action: none;            /* zcela vypne nativní gesta nad hitboxem */
-        -webkit-touch-callout: none;
-        z-index: 9999;
-      }
-    `;
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
-  })();
-
-  // ---- Průhledný HITBOX nad canvasem (bere interakce) ----
-  const hitbox = document.createElement('div');
-  hitbox.className = 'hitbox';
-
-  // Parent musí být relativní (kvůli absolute hitboxu)
-  const parent = c.parentElement || document.body;
-  const ps = getComputedStyle(parent);
-  if (ps.position === 'static') parent.style.position = 'relative';
-
-  // Canvas: jen kreslení
-  c.setAttribute('tabindex', '-1');
-  c.style.outline = 'none';
-  c.style.userSelect = 'none';
-  c.style.webkitUserSelect = 'none';
-  c.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
-  c.style.touchAction = 'none';
-  c.addEventListener('contextmenu', e => e.preventDefault());
-
-  parent.appendChild(hitbox);
-
-  // --- Hra ---
-  const colors = [
-    [0,255,255],[0,255,0],[255,255,0],[255,127,0],
-    [255,0,0],[255,0,255],[127,0,255],[0,0,255]
-  ];
-  const modes = ["easy","medium","hard"];
-  let mi = 0, mode = modes[mi];
-  const diff = {
-    easy:{tolerancePct:0.10,speed:1,acc:0.05},
-    medium:{tolerancePct:0.05,speed:2,acc:0.125},
-    hard:{tolerancePct:0.025,speed:3,acc:0.25}
-  };
-  const LS = "CasuaSlicerBest";
-  let best = { easy:0, medium:0, hard:0 };
-  try {
-    const s = JSON.parse(localStorage.getItem(LS));
-    if (s && typeof s === "object") best = {...best, ...s};
-  } catch {}
-
-  let iw=0, ih=0, ix=0, iy=100;
-  let SV=0, TOL=0, base=0, spd=0, co=0;
-  let ly=iy, dir=1, cut=null, hit=false, score=0, first=true;
-
-  function setMode(m){
-    const d = diff[m];
-    base = d.speed;
-    spd = base - d.acc;
-    co = base - 1;
-    TOL = Math.floor(ih * d.tolerancePct);
-  }
-  function reset(full=false){
-    cut = null;
-    hit = false;
-    ly = iy;
-    dir = 1;
-    if(full){
-      score = 0;
-      first = true;
-      spd = base - diff[mode].acc;
-    }
-  }
-  function saveBest(){
-    if(score > best[mode]){
-      best[mode] = score;
-      localStorage.setItem(LS, JSON.stringify(best));
-    }
-  }
-  function drawText(t,xp,yp,col="#fff",s=18,a="left"){
-    x.font = `${s}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
-    x.textBaseline = "top";
-    x.textAlign = a;
-    x.fillStyle = col;
-    x.fillText(t,xp,yp);
-  }
-  function drawLine(y,col,w=2){
-    x.strokeStyle=`rgb(${col[0]},${col[1]},${col[2]})`;
-    x.lineWidth=w;
-    x.beginPath();
-    x.moveTo(ix,y);
-    x.lineTo(ix+iw,y);
-    x.stroke();
-  }
-  function clamp(v,l,h){ return Math.max(l, Math.min(h, v)); }
-  function update(){
-    if(cut===null){
-      ly += spd * dir;
-      if(ly <= iy){ ly = iy; dir = 1; }
-      if(ly >= iy+ih){ ly = iy+ih; dir = -1; }
-    }
-  }
-  function render(){
-    x.fillStyle = "#1e1e1e";
-    x.fillRect(0,0,W,H);
-
-    // Přepočet řezu na originální výšku obrázku
-    if(cut === null){
-      x.drawImage(img, ix, iy, iw, ih);
-    } else {
-      const srcH = img.naturalHeight;
-      const scale = ih / srcH;
-      const realCut = Math.round(cut / scale);
-      x.drawImage(
-        img,
-        0, realCut,
-        img.naturalWidth, srcH - realCut,
-        ix, iy + cut,
-        iw, ih - cut
-      );
-    }
-
-    if(cut === null){
-      const step = Math.trunc((spd - base) / 0.5);
-      const idx = clamp(co + step, 0, colors.length - 1);
-      drawLine(Math.round(ly), colors[idx], 2);
-    }
-
-    drawText(mode.toUpperCase(),10,10,"#fff",16,"left");
-    drawText(`Score: ${score}`,W-10,10,"#fff",16,"right");
-    drawText(`Best: ${best[mode]}`,W-10,28,"#fff",16,"right");
-
-    if(first){
-      drawText("Stiskni mezerník nebo klikni na CASUA",W/2,10,"#fff",18,"center");
-    } else if(cut !== null){
-      drawText(hit ? "PERFECT!" : "FAIL!", W/2,10, hit?"#0f0":"#f00",20,"center");
-    }
-  }
-  function loop(){
-    update();
-    render();
-    requestAnimationFrame(loop);
+  async function sbGet(path) {
+    const r = await fetch(SUPABASE_URL + path, { headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON } });
+    let body = null; try { body = await r.json(); } catch(_) {}
+    if (!r.ok) throw body ?? { error: `HTTP ${r.status}` };
+    return body;
   }
 
-  // --- Společná akce pro Space + tap/klik na obrázek ---
-  function triggerSlice(){
-    first=false;
-    if(cut===null){
-      let r = Math.round(ly - iy);
-      r = clamp(r, 0, ih - 1);
-      if(Math.abs(r - SV) <= TOL){
-        hit=true;
-        score++;
-        spd += diff[mode].acc;
-        r = SV;
-      } else {
-        hit=false;
-        saveBest();
-        spd = base - diff[mode].acc;
-      }
-      cut = r;
-    } else {
-      cut = null;
-      if(!hit) score = 0;
-      hit=false;
-      ly=iy;
-      dir=1;
-    }
+  async function sbUpsert(row) {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/scores?on_conflict=device_id,difficulty", {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify(row)
+    });
+    let body = null; try { body = await r.json(); } catch(_) {}
+    if (!r.ok) throw body ?? { error: `HTTP ${r.status}` };
   }
 
-  // Klávesnice: Space
-  window.addEventListener("keydown", e=>{
-    if(e.code==="Space"){
-      e.preventDefault();
-      triggerSlice();
-    }
-  });
-
-  // ---- Interakce přes HITBOX: JEN pointerdown (myš/pero/dotyk) ----
-  function handle(mx, my){
-    // Přepínač režimu (vlevo nahoře)
-    if(mx>=10 && mx<=140 && my>=10 && my<=40){
-      saveBest();
-      mi = (mi+1) % modes.length;
-      mode = modes[mi];
-      setMode(mode);
-      reset(true);
-      return;
-    }
-    // Skryté tlačítko = oblast obrázku
-    if(mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih){
-      triggerSlice();
-    }
+  async function renameScoresForThisDevice(newNick) {
+    const r = await fetch(SUPABASE_URL + `/rest/v1/scores?device_id=eq.${DEVICE_ID}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ nick: newNick })
+    });
+    if (!r.ok) { let body=null; try{body=await r.json();}catch(_){} console.error("Rename failed:", r.status, body); }
   }
 
-  hitbox.addEventListener("pointerdown", e=>{
-    e.preventDefault();                 // potlačí nativní click/tap
-    const r = c.getBoundingClientRect();
-    const mx = e.clientX - r.left;
-    const my = e.clientY - r.top;
-    handle(mx, my);
-  });
-
-  // Potlačit click (některé prohlížeče jej vystřelí po touch)
-  hitbox.addEventListener("click", e=> { e.preventDefault(); e.stopPropagation(); }, { capture:true });
-
-  // Kurzor (jen pro myš)
-  hitbox.addEventListener("pointermove", e=>{
-    if(e.pointerType === 'touch') return;
-    const r = c.getBoundingClientRect();
-    const mx = e.clientX - r.left;
-    const my = e.clientY - r.top;
-    const overImage = (mx >= ix && mx <= ix+iw && my >= iy && my <= iy+ih);
-    hitbox.style.cursor = overImage ? "pointer" : "default";
-  });
-
-  // --- Umístění HITBOXU ---
-  function placeHitbox(){
-    hitbox.style.left   = `${c.offsetLeft}px`;
-    hitbox.style.top    = `${c.offsetTop}px`;
-    hitbox.style.width  = `${c.offsetWidth}px`;
-    hitbox.style.height = `${c.offsetHeight}px`;
-  }
-
-  const ro = new ResizeObserver(placeHitbox);
-  ro.observe(c);
-  window.addEventListener('resize', placeHitbox, { passive:true });
-  window.addEventListener('orientationchange', placeHitbox, { passive:true });
-  parent.addEventListener('scroll', placeHitbox, { passive:true });
-
-  img.onload = ()=>{
-    const ow = img.naturalWidth;
-    const oh = img.naturalHeight;
-    const nw = 600;
-    const sc = nw / ow;
-    const nh = Math.round(oh * sc);
-    iw = nw;
-    ih = nh;
-    ix = Math.floor((W - iw) / 2);
-    iy = 100;
-    SV = Math.floor(ih * 0.334);
-    setMode(mode);
-    reset(true);
-    requestAnimationFrame(loop);
-    placeHitbox();
-  };
-
-  img.onerror = ()=>{
-    x.fillStyle="#1e1e1e";
-    x.fillRect(0,0,W,H);
-    drawText("Chybí soubor obrazek.png",W/2,H/2-10,"#f88",18,"center");
-    placeHitbox();
-  };
-})();
-``
-
+  async function sbDeleteDeviceScores() {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/delete_scores_for_device", {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ p_device_id: DEVICE_ID })
