@@ -88,7 +88,7 @@ canvas {
   cursor: pointer;
 }
 
-/* Mřížka tří sloupců – každý sloupec 1/3 */
+/* Mřížka tří sloupců – každý sloupec 1/3 šířky */
 .lb-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -106,29 +106,34 @@ canvas {
   text-align: center;
 }
 
-/* Seznam výsledků – centrovaný text */
+/* Seznam výsledků – centrovaný text + číslování (funguje i bez <li>) */
 .lb-list {
   margin: 0;
-  padding: 0;              /* zruší defaultní odsazení */
+  padding: 0;              /* bez odsazení vlevo */
   color: #eee;
-  min-height:  min-height: 3.5em;
-  list-style: none;        /* schová defaultní markery */
+  min-height: 3.5em;
+  list-style: none;        /* nečekáme defaultní ol/ul */
   text-align: center;      /* obsah na střed */
   line-height: 1.4;
-  counter-reset: rank;     /* CSS counter pro 1., 2., 3. ... */
+  counter-reset: rank;     /* čítač 1., 2., 3. ... */
 }
-.lb-list li {
+
+/* každé přímé dítě seznamu zvyšuje čítač */
+.lb-list > * {
   counter-increment: rank;
   margin: 2px 0;
+  display: inline-block;   /* aby každý řádek šel čistě centrovat */
 }
-.lb-list li::before {
+
+/* prefix „1. “ před každým řádkem */
+.lb-list > *::before {
   content: counter(rank) ". ";
   font-weight: 600;
   color: #ffd166;
 }
 
-/* Volitelné: zvýraznit TOP 3 položky */
-.lb-list li:nth-child(-n+3) {
+/* volitelné: zvýraznit TOP 3 položky */
+.lb-list > *:nth-child(-n+3) {
   font-weight: 600;
   color: #ffd166;
 }
@@ -139,3 +144,5 @@ canvas {
   canvas { width: 100%; height: auto; }
   .lb-panel { width: 96vw; }
   .lb-grid { grid-template-columns: 1fr; } /* sloupce pod sebe na mobilech */
+}
+``
