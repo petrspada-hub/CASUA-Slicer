@@ -1,60 +1,174 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8" />
-  <title>CASUA Slicer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="icon.png">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    #ui { width:700px; margin:0 auto; }
-    #topbar { display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
-    #lbToggle { background:#333; color:#fff; border:1px solid #444; padding:4px 8px; cursor:pointer; }
-    #lbPanel { border:1px solid #333; padding:8px; margin-top:6px; }
-    #lbPanel.hidden { display:none; }
-    #nickRow { margin-bottom:6px; }
-    #nick { width:140px; }
-    .cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-    ul { list-style:none; padding:0; margin:0; }
-    li { font-size:14px; }
-    .me { font-size:13px; color:#aaa; margin-top:4px; }
-  </style>
+<meta charset="utf-8">
+<title>CASUA Slicer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="icon.png">
+
+<style>
+html, body {
+  background: #1e1e1e;
+  margin: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font: 14px system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+.wrap {
+  position: relative;
+  width: 700px;
+}
+
+/* Canvas */
+canvas {
+  border: 1px solid #333;
+  image-rendering: crisp-edges;
+  border-radius: 8px;
+  background: #1e1e1e;
+}
+
+/* PANEL ŽEBŘÍČKU */
+.lb-panel {
+  margin-top: 10px;
+  background: #1e1e1e;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+
+.lb-panel.hidden {
+  display: none;
+}
+
+/* Hlavička panelu: nick + uložit */
+.lb-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+.lb-header input {
+  flex: 1;
+  padding: 6px 8px;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+}
+.lb-header button {
+  padding: 6px 10px;
+  background: #2d6cdf;
+  border: 0;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Grid 3 sloupce */
+.lb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 40px;
+  row-gap: 12px;
+  align-items: start;
+}
+
+/* Sloupce */
+.lb-col {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px;
+  box-sizing: border-box;
+  display: grid;
+  grid-auto-rows: min-content;
+}
+
+.lb-col strong {
+  display: block;
+  margin: 4px auto 8px;
+  width: max-content;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: .3px;
+}
+
+/* Seznam výsledků */
+.lb-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #eee;
+  line-height: 1.4;
+  min-height: 3.5em;
+}
+
+/* Položky */
+.lb-list li { margin: 2px 0; }
+
+/* Řádek: rank | name | score */
+.lb-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: 10px;
+  align-items: baseline;
+}
+.lb-row .rank  { font-weight: 700; color: #fff; justify-self: start; }
+.lb-row .name  { justify-self: start; }
+.lb-row .score { justify-self: end; font-variant-numeric: tabular-nums; }
+
+/* TOP 3 */
+.lb-list li:nth-child(-n+3) .name,
+.lb-list li:nth-child(-n+3) .score {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Mobilní verze */
+@media (max-width: 760px) {
+  .wrap    { width: 96vw; }
+  canvas   { width: 100%; height: auto; }
+  .lb-panel{ width: 96vw; }
+  .lb-grid {
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 20px;
+  }
+}
+</style>
 </head>
 
 <body>
-  <div id="ui">
-    <div id="topbar">
-      <div id="nickRow">
-        Nick:
-        <input id="nick" type="text" maxlength="20">
-        <button id="saveNick">Uložit</button>
-      </div>
-      <button id="lbToggle" aria-expanded="false">Žebříček</button>
+<div class="wrap">
+  <canvas id="game" width="700" height="300"></canvas>
+
+  <!-- PANEL ŽEBŘÍČKU pod canvas, defaultně skrytý -->
+  <div id="lbPanel" class="lb-panel hidden" aria-hidden="true">
+    <div class="lb-header">
+      <input id="nick" type="text" maxlength="20" placeholder="Nick">
+      <button id="saveNick">Uložit</button>
     </div>
-
-    <canvas id="game" width="700" height="300"></canvas>
-
-    <div id="lbPanel" class="hidden" aria-hidden="true">
-      <div class="cols">
-        <div>
-          <strong>EASY</strong>
-          <ul id="lb-easy"></ul>
-          <div class="me">Moje best: <span id="me-easy">—</span></div>
-        </div>
-        <div>
-          <strong>MEDIUM</strong>
-          <ul id="lb-medium"></ul>
-          <div class="me">Moje best: <span id="me-medium">—</span></div>
-        </div>
-        <div>
-          <strong>HARD</strong>
-          <ul id="lb-hard"></ul>
-          <div class="me">Moje best: <span id="me-hard">—</span></div>
-        </div>
+    <div class="lb-grid">
+      <div class="lb-col">
+        <strong>EASY</strong>
+        <ul id="lb-easy" class="lb-list"></ul>
+      </div>
+      <div class="lb-col">
+        <strong>MEDIUM</strong>
+        <ul id="lb-medium" class="lb-list"></ul>
+      </div>
+      <div class="lb-col">
+        <strong>HARD</strong>
+        <ul id="lb-hard" class="lb-list"></ul>
       </div>
     </div>
   </div>
+</div>
 
-  <script src="script.js" defer></script>
+<script src="script.js" defer></script>
 </body>
 </html>
