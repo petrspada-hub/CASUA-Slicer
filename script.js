@@ -1,6 +1,6 @@
 (() => {
-    const SUPABASE_URL = "https://wqjfwcsrugopmottwmtl.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey...";
+    const SUPABASE_URL = "https://tvcfaeewwgwkcruwsciq.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Y2ZhZWV3d2d3a2NydXdzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA4ODcsImV4cCI6MjA4OTI4Njg4N30.RLiXhRr41IUfSGtTO6z_nNMdtB21ya-LOrhuE0WmvZY";
     async function sbGet(path) {
         const r = await fetch(SUPABASE_URL + path, { headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON } });
         let body = null; try { body = await r.json(); } catch (_) { }
