@@ -449,6 +449,8 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             updateImageForDifficulty();
             setMode(mode);
             reset(true);
+            running = true;
+            requestAnimationFrame(loop);
             return;
         }
         const rightWidth = 180, topHeight = 40;
