@@ -1,6 +1,6 @@
 (() => {
-    const SUPABASE_URL = "https://tvcfaeewwgwkcruwsciq.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Y2ZhZWV3d2d3a2NydXdzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA4ODcsImV4cCI6MjA4OTI4Njg4N30.RLiXhRr41IUfSGtTO6z_nNMdtB21ya-LOrhuE0WmvZY";
+    const SUPABASE_URL = "https://wqjfwcsrugopmottwmtl.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey...";
     async function sbGet(path) {
         const r = await fetch(SUPABASE_URL + path, { headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON } });
         let body = null; try { body = await r.json(); } catch (_) { }
@@ -196,13 +196,12 @@
     const x = c.getContext("2d");
 
     const img = new Image();
-    
-    function updateImageForDifficulty() {
-        if (mode === "easy") img.src = "obrazek_easy.png";
-        else if (mode === "medium") img.src = "obrazek_medium.png";
-        else if (mode === "hard") img.src = "obrazek_hard.png";
+    function updateImageForMode() {
+        img.src = `obrazek_${mode}.png`;
     }
-       
+    updateImageForMode(); // výchozí = easy
+
+
     // >>> HEAD FEATURE — načtení hlavy
     const head = new Image();
     head.src = "head.png";
@@ -328,7 +327,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
         }
     }
 }
-        
+
     function render() {
         x.fillStyle = "#1e1e1e";
         x.fillRect(0, 0, W, H);
@@ -386,9 +385,8 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             x.restore();
         }
     }
-    let running = true;
-    
-    function loop() { if (!running) return; update(); render(); requestAnimationFrame(loop); }
+
+    function loop() { update(); render(); requestAnimationFrame(loop); }
 
     async function triggerSlice() {
         first = false;
@@ -446,11 +444,9 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             if (wasBetter) saveBestGlobal().catch(() => { });
             mi = (mi + 1) % modes.length;
             mode = modes[mi];
-            updateImageForDifficulty();
+            updateImageForMode();
             setMode(mode);
             reset(true);
-            running = true;
-            requestAnimationFrame(loop);
             return;
         }
         const rightWidth = 180, topHeight = 40;
@@ -509,19 +505,15 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
         SV = Math.floor(ih * 0.334);
         setMode(mode);
         reset(true);
-        if (animationId) cancelAnimationFrame(animationId);
-        running = true;
         requestAnimationFrame(loop);
         placeHitbox();
     };
     img.onerror = () => {
         x.fillStyle = "#1e1e1e";
         x.fillRect(0, 0, W, H);
-        drawText("Chybí obrázek pro obtížnost", W / 2, H / 2 - 10, "#f88", 18, "center");
+        drawText("Chybí soubor obrazek.png", W / 2, H / 2 - 10, "#f88", 18, "center");
         placeHitbox();
     };
-
-    updateImageForDifficulty();
 
     window.saveScore = async function (difficulty, newScore) {
         const nick = getNick(); if (!nick) return;
