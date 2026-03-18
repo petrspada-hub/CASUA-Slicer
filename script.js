@@ -202,10 +202,7 @@
         else if (mode === "medium") img.src = "obrazek_medium.png";
         else if (mode === "hard") img.src = "obrazek_hard.png";
     }
-    
-    // nastaví obrázek hned při startu
-    updateImageForDifficulty();
-   
+       
     // >>> HEAD FEATURE — načtení hlavy
     const head = new Image();
     head.src = "head.png";
@@ -248,6 +245,9 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     const colors = [[0, 255, 255], [0, 255, 0], [255, 255, 0], [255, 127, 0], [255, 0, 0], [255, 0, 255], [127, 0, 255], [0, 0, 255]];
     const modes = ["easy", "medium", "hard"];
     let mi = 0, mode = modes[mi];
+
+    // nastaví obrázek hned při startu
+    updateImageForDifficulty();
 
     const diff = {
         easy: { tolerancePct: 0.10, speed: 1, acc: 0.05 },
@@ -516,7 +516,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     img.onerror = () => {
         x.fillStyle = "#1e1e1e";
         x.fillRect(0, 0, W, H);
-        drawText("Chybí soubor obrazek.png", W / 2, H / 2 - 10, "#f88", 18, "center");
+        drawText("Chybí obrázek pro obtížnost", W / 2, H / 2 - 10, "#f88", 18, "center");
         placeHitbox();
     };
 
