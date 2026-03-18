@@ -386,7 +386,8 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             x.restore();
         }
     }
-
+    let running = true;
+    
     function loop() { update(); render(); requestAnimationFrame(loop); }
 
     async function triggerSlice() {
@@ -445,6 +446,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             if (wasBetter) saveBestGlobal().catch(() => { });
             mi = (mi + 1) % modes.length;
             mode = modes[mi];
+            running = false;
             updateImageForDifficulty();
             return;
         }
@@ -504,6 +506,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
         SV = Math.floor(ih * 0.334);
         setMode(mode);
         reset(true);
+        running = true;
         requestAnimationFrame(loop);
         placeHitbox();
     };
