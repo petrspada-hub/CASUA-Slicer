@@ -201,7 +201,7 @@
         hard: "obrazek_hard.png"
     };
 
-    const img = new Image();
+    let img = new Image();
     img.src = "obrazek.png";
 
     // >>> HEAD FEATURE — načtení hlavy
