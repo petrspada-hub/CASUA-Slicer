@@ -199,9 +199,7 @@
     function updateImageForMode() {
         img.src = `obrazek_${mode}.png`;
     }
-    updateImageForMode(); // výchozí = easy
-
-
+    
     // >>> HEAD FEATURE — načtení hlavy
     const head = new Image();
     head.src = "head.png";
@@ -244,6 +242,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     const colors = [[0, 255, 255], [0, 255, 0], [255, 255, 0], [255, 127, 0], [255, 0, 0], [255, 0, 255], [127, 0, 255], [0, 0, 255]];
     const modes = ["easy", "medium", "hard"];
     let mi = 0, mode = modes[mi];
+    updateImageForMode();  // výchozí easy obrázek
 
     const diff = {
         easy: { tolerancePct: 0.10, speed: 1, acc: 0.05 },
