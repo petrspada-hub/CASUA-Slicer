@@ -196,8 +196,16 @@
     const x = c.getContext("2d");
 
     const img = new Image();
-    img.src = "obrazek.png";
-
+    
+    function updateImageForDifficulty() {
+        if (mode === "easy") img.src = "obrazek_easy.png";
+        else if (mode === "medium") img.src = "obrazek_medium.png";
+        else if (mode === "hard") img.src = "obrazek_hard.png";
+    }
+    
+    // nastaví obrázek hned při startu
+    updateImageForDifficulty();
+   
     // >>> HEAD FEATURE — načtení hlavy
     const head = new Image();
     head.src = "head.png";
@@ -442,6 +450,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             mode = modes[mi];
             setMode(mode);
             reset(true);
+            updateImageForDifficulty();
             return;
         }
         const rightWidth = 180, topHeight = 40;
@@ -495,6 +504,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     parent.addEventListener('scroll', placeHitbox, { passive: true });
 
     img.onload = () => {
+        updateImageForDifficulty();
         const ow = img.naturalWidth, oh = img.naturalHeight, nw = 600, sc = nw / ow, nh = Math.round(oh * sc);
         iw = nw; ih = nh; ix = Math.floor((W - iw) / 2); iy = 100;
         SV = Math.floor(ih * 0.334);
