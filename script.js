@@ -273,7 +273,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     function reset(full = false) {
         cut = null; hit = false; ly = iy; dir = 1;
         headVisible = false;                      // >>> HEAD FEATURE
-        if (full) { score = 0; first = true; spd = base - diff[mode].acc; }
+        if (full) { score = 0; first = true; spd = base; }
     }
 
     function saveBestLocal() {
