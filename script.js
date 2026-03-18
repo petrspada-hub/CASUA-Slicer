@@ -1,6 +1,6 @@
 (() => {
-    const SUPABASE_URL = "https://wqjfwcsrugopmottwmtl.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey...";
+    const SUPABASE_URL = "https://tvcfaeewwgwkcruwsciq.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Y2ZhZWV3d2d3a2NydXdzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA4ODcsImV4cCI6MjA4OTI4Njg4N30.RLiXhRr41IUfSGtTO6z_nNMdtB21ya-LOrhuE0WmvZY";
     async function sbGet(path) {
         const r = await fetch(SUPABASE_URL + path, { headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON } });
         let body = null; try { body = await r.json(); } catch (_) { }
@@ -196,10 +196,8 @@
     const x = c.getContext("2d");
 
     const img = new Image();
-    function updateImageForMode() {
-        img.src = `obrazek_${mode}.png`;
-    }
-    
+    img.src = "obrazek.png";
+
     // >>> HEAD FEATURE — načtení hlavy
     const head = new Image();
     head.src = "head.png";
@@ -242,7 +240,6 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     const colors = [[0, 255, 255], [0, 255, 0], [255, 255, 0], [255, 127, 0], [255, 0, 0], [255, 0, 255], [127, 0, 255], [0, 0, 255]];
     const modes = ["easy", "medium", "hard"];
     let mi = 0, mode = modes[mi];
-    updateImageForMode();  // výchozí easy obrázek
 
     const diff = {
         easy: { tolerancePct: 0.10, speed: 1, acc: 0.05 },
@@ -265,7 +262,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     function setMode(m) {
         const d = diff[m];
         base = d.speed;
-        spd = base;
+        spd = base - d.acc;
         co = base - 1;
         TOL = Math.floor(ih * d.tolerancePct);
     }
@@ -273,7 +270,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     function reset(full = false) {
         cut = null; hit = false; ly = iy; dir = 1;
         headVisible = false;                      // >>> HEAD FEATURE
-        if (full) { score = 0; first = true; spd = base; }
+        if (full) { score = 0; first = true; spd = base - diff[mode].acc; }
     }
 
     function saveBestLocal() {
@@ -445,7 +442,6 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             mode = modes[mi];
             setMode(mode);
             reset(true);
-            updateImageForMode();
             return;
         }
         const rightWidth = 180, topHeight = 40;
