@@ -330,7 +330,6 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             headSliding = false;
         }
     }
-}
 
     function render() {
         x.fillStyle = "#1e1e1e";
