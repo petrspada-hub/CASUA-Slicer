@@ -265,7 +265,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     function setMode(m) {
         const d = diff[m];
         base = d.speed;
-        spd = base - d.acc;
+        spd = base;
         co = base - 1;
         TOL = Math.floor(ih * d.tolerancePct);
     }
@@ -443,9 +443,9 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             if (wasBetter) saveBestGlobal().catch(() => { });
             mi = (mi + 1) % modes.length;
             mode = modes[mi];
-            updateImageForMode();
             setMode(mode);
             reset(true);
+            updateImageForMode();
             return;
         }
         const rightWidth = 180, topHeight = 40;
