@@ -388,7 +388,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
     }
     let running = true;
     
-    function loop() { update(); render(); requestAnimationFrame(loop); }
+    function loop() { if (!running) return; update(); render(); requestAnimationFrame(loop); }
 
     async function triggerSlice() {
         first = false;
