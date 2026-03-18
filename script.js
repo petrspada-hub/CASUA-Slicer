@@ -507,6 +507,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
         SV = Math.floor(ih * 0.334);
         setMode(mode);
         reset(true);
+        if (animationId) cancelAnimationFrame(animationId);
         running = true;
         requestAnimationFrame(loop);
         placeHitbox();
