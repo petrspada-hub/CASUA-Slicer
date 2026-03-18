@@ -195,6 +195,12 @@
     const c = document.getElementById("game");
     const x = c.getContext("2d");
 
+    const difficultyImages = {
+        easy: "obrazek_easy.png",
+        medium: "obrazek_medium.png",
+        hard: "obrazek_hard.png"
+    };
+
     const img = new Image();
     img.src = "obrazek.png";
 
@@ -208,7 +214,20 @@
     let headSlide = 0;           // 0 = schovaná, 1 = vysunutá
     let headSliding = false;     // probíhá animace?
 
+    function switchDifficultyImage(m) {
+        const newImg = new Image();
+        newImg.src = difficultyImages[m];
 
+        newImg.onload = () => {
+            // pouze vyměníme obrázek
+            img = newImg;
+            // NIC nepřepočítáváme, aby rychlost zůstala konzistentní
+        };
+
+        newImg.onerror = () => {
+            console.warn("Chybí obrázek pro mód:", m);
+        };
+    } 
 
     (function () {
         const css = `
@@ -441,6 +460,7 @@ html, body, canvas, #game, .hitbox { -webkit-tap-highlight-color: rgba(0,0,0,0) 
             mi = (mi + 1) % modes.length;
             mode = modes[mi];
             setMode(mode);
+            switchDifficultyImage(mode);
             reset(true);
             return;
         }
